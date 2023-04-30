@@ -15,7 +15,7 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk:0.25")
 }
 
-version = "0.1-SNAPSHOT"
+version = "0.1"
 
 publishing {
     publications {
