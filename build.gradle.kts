@@ -16,6 +16,7 @@ dependencies {
     testImplementation("com.willowtreeapps.assertk:assertk:0.25")
 }
 
+group = "me.tatarka.webpush"
 version = "0.1"
 
 nexusPublishing {
@@ -27,7 +28,6 @@ nexusPublishing {
 publishing {
     publications {
         create<MavenPublication>("release") {
-            groupId = "me.tatarka.webpush"
             artifactId = "webpush-encryption"
 
             afterEvaluate {
