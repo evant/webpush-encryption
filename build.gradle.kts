@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("org.jetbrains.kotlin.jvm") version "1.8.0"
+    id("org.jetbrains.dokka") version "1.8.10"
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
     `maven-publish`
     signing
@@ -19,6 +20,16 @@ dependencies {
 group = "me.tatarka.webpush"
 version = "0.1"
 
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(kotlin.sourceSets["main"].kotlin.srcDirs)
+}
+
+val javadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+}
+
 nexusPublishing {
     repositories {
         sonatype()
@@ -30,9 +41,9 @@ publishing {
         create<MavenPublication>("release") {
             artifactId = "webpush-encryption"
 
-            afterEvaluate {
-                from(components["java"])
-            }
+            from(components["kotlin"])
+            artifact(sourcesJar)
+            artifact(javadocJar)
 
             pom {
                 name.set("webpush-encryption")
