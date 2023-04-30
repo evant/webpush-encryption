@@ -37,7 +37,7 @@ where:
   generate).
 - `body` is the plaintext payload to encrypt.
 
-You can then pass along the returned WebPush to the server of your choice. In includes `headers` and
+You can then pass along the returned WebPush with the server of your choice. It includes `headers` and
 the `encryptedBody`.
 
 ### Decryption
