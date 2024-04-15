@@ -31,12 +31,8 @@ workflows:
           filters:
             branches:
               ignore: main
-            tags:
-              ignore: /.*/
       - build:
           context: opensource-maven
           filters:
             branches:
               only: main
-            tags:
-              only: /.*/
