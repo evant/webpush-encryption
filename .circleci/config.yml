@@ -3,11 +3,8 @@ orbs:
   gradle: circleci/gradle@3.0.0
 jobs:
   build:
-    working_directory: ~/code
     docker:
       - image: cimg/openjdk:11.0.19
-    environment:
-      JVM_OPTS: -Xmx3200m
     steps:
       - checkout
       - gradle/with_cache:
@@ -18,16 +15,28 @@ jobs:
             - run:
                 name: Test
                 command: ./gradlew test
-            - deploy:
+            - run:
+                name: Publish
                 command: |
                   if [ "${CIRCLE_BRANCH}" == "main" ]; then
                     echo "$MAVEN_CENTRAL_SEC_RING" | base64 -d > $HOME/secring.gpg
                     gpg --import --batch $HOME/secring.gpg
-                    ./gradlew publish -PsonatypeUsername="$SONATYPE_USERNAME" -PsonatypePassword="$SONATYPE_PASSWORD" -Psigning.keyId=34BCD878 -Psigning.password="$MAVEN_CENTRAL_KEY_PASSPHRASE" -Psigning.secretKeyRingFile=$HOME/secring.gpg -Porg.gradle.parallel=false
+                    ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -PsonatypeUsername="$SONATYPE_USERNAME" -PsonatypePassword="$SONATYPE_PASSWORD" -Psigning.keyId="$MAVEN_CENTRAL_KEY_ID" -Psigning.password="$MAVEN_CENTRAL_KEY_PASSPHRASE" -Psigning.secretKeyRingFile=$HOME/secring.gpg -Porg.gradle.parallel=false
                   fi
 workflows:
   version: 2
   build:
     jobs:
       - build:
+          filters:
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
+      - build:
           context: opensource-maven
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /.*/
