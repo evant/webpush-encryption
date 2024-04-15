@@ -18,7 +18,7 @@ dependencies {
 }
 
 group = "me.tatarka.webpush"
-version = "0.2-SNAPSHOT"
+version = "0.1.1"
 
 val sourcesJar by tasks.registering(Jar::class) {
     archiveClassifier.set("sources")
