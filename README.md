@@ -12,7 +12,7 @@ be converted to and from other forms using the built-in functions on those types
 ## Download
 
 ```kotlin
-implemenation("me.tatarka.webpush:webpush-encryption:0.1")
+implemenation("me.tatarka.webpush:webpush-encryption:0.1.1")
 ```
 
 ## Usage
