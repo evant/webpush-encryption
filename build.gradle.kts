@@ -12,7 +12,7 @@ kotlin {
 }
 
 dependencies {
-    api("com.squareup.okio:okio:3.3.0")
+    api("com.squareup.okio:okio:3.9.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.willowtreeapps.assertk:assertk:0.25")
 }
