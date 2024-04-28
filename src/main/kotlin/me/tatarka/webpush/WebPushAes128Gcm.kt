@@ -25,7 +25,9 @@ internal fun <PK> aes128gcmEncrypt(
     paddingStrategy: PaddingStrategy,
 ): WebPush where PK : Key, PK : ECKey {
     // later versions include it in encoded data instead
-    val headers = listOf("Content-Encoding" to "aes128gcm")
+    val headers = listOf(
+        WebPush.HeaderContentEncoding to WebPush.ContentEncoding.aes128gcm.toString()
+    )
 
     val localPublicKeyBytes = pointEncode(publicKey.w)
     val remotePublicKeyBytes = clientPublicKey.toByteArray()
