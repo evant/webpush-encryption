@@ -28,7 +28,9 @@ internal fun <PK> aesgcmEncrypt(
     paddingStrategy: PaddingStrategy,
 ): WebPush where PK : Key, PK : ECKey {
     // draft version included key params in headers
-    val headers = AesgcmEncoding(
+    val headers = listOf(
+        WebPush.HeaderContentEncoding to WebPush.ContentEncoding.aesgcm.toString()
+    ) + AesgcmParamaters(
         dh = pointEncode(publicKey.w).toByteString(),
         salt = salt,
     ).toHeaders()
@@ -73,7 +75,7 @@ internal fun <PK> aesgcmDecrypt(
     headers: Headers,
     encryptedBody: Source,
 ): Source where PK : Key, PK : ECKey {
-    val headerData = AesgcmEncoding.extract(headers)
+    val headerData = AesgcmParamaters.extract(headers)
 
     val localPublicKeyBytes = pointEncode(publicKey.w)
     val remotePublicKeyBytes = headerData.dh.toByteArray()
@@ -163,23 +165,30 @@ private fun <PK> calculateSecretKeyAndNonce(
     return key to nonce
 }
 
-
-private class AesgcmEncoding(
+/**
+ * asegcm-specific header parameters. Note: there isn't an aes128gcm equivalent because those an encoded in the body.
+ */
+private class AesgcmParamaters(
     val dh: ByteString,
     val salt: ByteString,
 ) {
-    val encoding = WebPush.ContentEncoding.aesgcm
 
+    /**
+     * Converts the params into a headers that can be added to an encrypted request.
+     */
     fun toHeaders(): Headers {
         return listOf(
-            "Content-Encoding" to encoding.toString(),
             "Crypto-Key" to "dh=${dh.base64Url().replace("=", "")}",
             "Encryption" to "salt=${salt.base64Url().replace("=", "")}",
         )
     }
 
     companion object {
-        fun extract(headers: Headers): AesgcmEncoding {
+        /**
+         * Extracts the [AesgcmParamaters] from the given headers, checking for 'Crypto-Key' and 'Encryption'.
+         * @throws WebPushFormatException if the expected headers are missing or malformed.
+         */
+        fun extract(headers: Headers): AesgcmParamaters {
             var dh: ByteString? = null
             var salt: ByteString? = null
 
@@ -227,7 +236,7 @@ private class AesgcmEncoding(
                 throw WebPushFormatException("Missing 'Encryption' header")
             }
 
-            return AesgcmEncoding(
+            return AesgcmParamaters(
                 dh = dh,
                 salt = salt
             )
@@ -282,7 +291,7 @@ private class StripLeadingPaddingSource(source: Source) : Source {
     }
 }
 
-private class PrependZeroPadSource(source: Source): Source {
+private class PrependZeroPadSource(source: Source) : Source {
 
     private val source = SizeRestrictedSource(4077, source)
     private val paddingBytes = Buffer().writeShort(0)

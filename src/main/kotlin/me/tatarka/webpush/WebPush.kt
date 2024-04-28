@@ -14,8 +14,6 @@ import java.security.PublicKey
 import java.security.SecureRandom
 import java.security.interfaces.ECKey
 import java.security.interfaces.ECPublicKey
-import java.security.spec.EllipticCurve
-import javax.crypto.SecretKey
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -28,7 +26,7 @@ open class WebPushFormatException(message: String) : Exception(message)
  * encrypt a payload and [WebPush.decrypt] to decrypt it.
  *
  * @constructor Constructs a WebPush from the provided headers and encrypted payload.
- * @param headers A list of name,value pair of headers. Note: these will not be validated they are
+ * @param headers A list of name,value-pair of headers. Note: these will not be validated they are
  * correct until [decrypt] is called.
  * @param encryptedBody The encrypted payload of the WebPush.
  */
@@ -59,7 +57,7 @@ class WebPush(
         val privateKey = keys.private
         checkParams(authSecret, publicKey, privateKey)
 
-        return when (matchEncoding(headers)) {
+        return when (ContentEncoding.match(headers)) {
             ContentEncoding.aes128gcm -> {
                 aes128gcmDecrypt(
                     authSecret = authSecret,
@@ -99,10 +97,42 @@ class WebPush(
          */
         aesgcm {
             override fun toString(): String = "aesgcm"
+        };
+
+        companion object {
+            /**
+             * Obtains a [ContentEncoding] from the given string value which can be 'aes128gcm' or 'aesgcm'.
+             * @throws WebPushFormatException if the value is an unsupported encoding
+             */
+            fun of(value: String): ContentEncoding {
+                return when (value) {
+                    "aes128gcm" -> aes128gcm
+                    "aesgcm" -> aesgcm
+                    else -> throw WebPushFormatException("Unsupported Content-Encoding: $value")
+                }
+            }
+
+            /**
+             * Obtains a [ContentEncoding] by looking for a 'Content-Encoding' header.
+             * @throws WebPushFormatException if the header is missing or has an unsupported encoding.
+             */
+            internal fun match(headers: Headers): ContentEncoding {
+                for ((name, value) in headers) {
+                    when (name) {
+                        "Content-Encoding" -> {
+                            return of(value)
+                        }
+                    }
+                }
+                throw WebPushFormatException("Missing 'Content-Encoding' header")
+            }
         }
     }
 
     companion object {
+        const val HeaderContentEncoding = "Content-Encoding"
+        const val HeaderCryptoKey = "Crypto-Key"
+        const val HeaderEncryption = "Encryption"
 
         @Suppress("NOTHING_TO_INLINE")
         @OptIn(ExperimentalContracts::class)
@@ -239,21 +269,6 @@ class WebPush(
             return pointEncode(key.w).toByteString()
         }
     }
-}
-
-private fun matchEncoding(headers: Headers): WebPush.ContentEncoding {
-    for ((name, value) in headers) {
-        when (name) {
-            "Content-Encoding" -> {
-                return when (value) {
-                    "aesgcm" -> WebPush.ContentEncoding.aesgcm
-                    "aes128gcm" -> WebPush.ContentEncoding.aes128gcm
-                    else -> throw WebPushFormatException("Unsupported Content-Encoding: $value")
-                }
-            }
-        }
-    }
-    throw WebPushFormatException("Missing 'Content-Encoding' header")
 }
 
 internal class SizeRestrictedSource(private val size: Int, private val source: Source) : Source {
